@@ -91,7 +91,7 @@ class Program
         {
             var embeds = new EmbedBuilder();
             embeds.WithTitle("help c#のevalbot");
-            embeds.WithDescription(prefix + "eval [内容]で普通に実行");
+            embeds.WithDescription($"{prefix}eval [内容]で普通に実行\n{prefix}run [内容]でコンパイル＆実行\n{prefix}runで返信することで実行することもできます。");
             await message.Channel.SendMessageAsync("", embed: embeds.Build());
         }
 
