@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Discord;
 using Discord.WebSocket;
 using System.Net.Sockets;
@@ -14,7 +14,7 @@ class Program
     private readonly string prefix = "c!";
 
     private string token="SAMPLETOKEN";
-    // token = Environment.GetEnvironmentVariable("token");
+    
     private readonly DiscordSocketClient _client;
     static void Main(string[] args)
         => new Program()
@@ -49,7 +49,7 @@ class Program
 
     public async Task MainAsync()
     {
-        
+       // token = Environment.GetEnvironmentVariable("token");
         Task task = Task.Run(() =>
         {
             SimpleWebServer.MMain();
@@ -191,7 +191,12 @@ class Program
     {
         var e = new EmbedBuilder();
         e.Title = title;
-        e.Description = content;
+        if(content.Length>4010){
+e.Description = $"```\n{content.Substring(0,4000)}\n```";
+        }
+        else{
+e.Description =$"```\n{content}\n```";
+        }
         return e.Build();
     }
     private async Task<string> eval(string script, SocketMessage message)
@@ -253,7 +258,7 @@ class Program
         }
         catch (Exception e)
         {
-            return e.ToString();
+            return e.Message;
         }
     }
     public async Task<string> EvaluateCSharpAsync(string code, SocketMessage message)
@@ -284,7 +289,7 @@ class Program
         }
         catch (Exception ex)
         {
-            result = $"{ex.Message}{Environment.NewLine}{ex.StackTrace}";
+            result = $"{ex.Message}";
         }
 
         var resultText = result?.ToString() ?? "";
