@@ -13,7 +13,7 @@ class Program
 {
     private readonly string prefix = "c!";
 
-    private string token="SAMPLETOKEN";
+    private string token="YOUR_TOKEN";
     
     private readonly DiscordSocketClient _client;
     static void Main(string[] args)
@@ -49,7 +49,7 @@ class Program
 
     public async Task MainAsync()
     {
-       // token = Environment.GetEnvironmentVariable("token");
+        //token = Environment.GetEnvironmentVariable("token");
         Task task = Task.Run(() =>
         {
             SimpleWebServer.MMain();
@@ -105,30 +105,30 @@ class Program
 
             //   replymessage.
             var messageme = await message.Channel.SendMessageAsync(
-                  "", embed: CommandEmbedBuilder("コードのコンパイル中..", "")
+                  "", embed: CommandEmbedBuilder("コードのコンパイル中..", "").Result
               );
             string a = eval(message.Content.ToString(), message).Result;
-            Embed result = CommandEmbedBuilder("a", "a");
+            Embed result = CommandEmbedBuilder("a", "a").Result;
             if (a == "error:null")
             {
                 result = CommandEmbedBuilder(
                     "エラー",
-                    "Scriptを入力してください"
-                );
+                    "Scriptを入力してください",message
+                ).Result;
             }
             else if (a.IndexOf("error CS") != -1)
             {
                 result = CommandEmbedBuilder(
                     "コンパイルエラー",
-                    a
-                );
+                    a,message
+                ).Result;
             }
             else
             {
                 result = CommandEmbedBuilder(
                     "成功しました",
-                    a
-                );
+                    a,message
+                ).Result;
             }
             await messageme.ModifyAsync((mes) =>
             {
@@ -144,7 +144,7 @@ class Program
     private async Task EvalCommand(SocketMessage Message, string command)
     {
         var message = await Message.Channel.SendMessageAsync(
-              "", embed: CommandEmbedBuilder("コードのコンパイル中..", "")
+              "", embed: CommandEmbedBuilder("コードのコンパイル中..", "").Result
           );
         string a;
         if (command == "eval")
@@ -159,40 +159,48 @@ class Program
         {
             a = "error";
         }
-
-        Embed result = CommandEmbedBuilder("a", "a");
+        
+        Embed result = CommandEmbedBuilder("a", "a",Message).Result;
         if (a == "error:null")
         {
             result = CommandEmbedBuilder(
                 "エラー",
                 "Scriptを入力してください"
-            );
+            ).Result;
         }
         else if (a.IndexOf("error CS") != -1)
         {
             result = CommandEmbedBuilder(
                 "コンパイルエラー",
-                a
-            );
+                a,Message
+            ).Result;
         }
         else
         {
             result = CommandEmbedBuilder(
                 "成功しました",
-                a
-            );
+                a,
+                Message
+            ).Result;
         }
         await message.ModifyAsync((mes) =>
         {
             mes.Embed = result;
         });
     }
-    private Embed CommandEmbedBuilder(string title, string content)
+    private async Task<Embed> CommandEmbedBuilder(string title, string content,SocketMessage mes=null)
     {
         var e = new EmbedBuilder();
         e.Title = title;
         if(content.Length>4010){
-e.Description = $"```\n{content.Substring(0,4000)}\n```";
+e.Description = $"```字数制限のためファイルでアップロード```";
+         var s= new StreamWriter("message.text");
+          s.Write(content);
+          s.Close();
+await mes.Channel.SendFileAsync("message.text");
+          var ss= new StreamWriter("message.text");
+          ss.Write("");
+          ss.Close();
         }
         else{
 e.Description =$"```\n{content}\n```";
