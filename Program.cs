@@ -13,8 +13,8 @@ class Program
 {
     private readonly string prefix = "c!";
 
-    private string token="YOUR_TOKEN";
-    
+    private string token;
+
     private readonly DiscordSocketClient _client;
     static void Main(string[] args)
         => new Program()
@@ -95,9 +95,41 @@ class Program
             await message.Channel.SendMessageAsync("", embed: embeds.Build());
         }
 
-        else if (args[0] == "eval" || args[0] == "run"||message.Content.Substring(prefix.Length,prefix.Length+1)=="run")
+        else if (args[0] == "eval" || args[0] == "run" || message.Content.Substring(prefix.Length, prefix.Length + 1) == "run")
         {
             await EvalCommand(message, args[0]);
+        }
+        else if (args[0] == "func")
+        {
+            string s = @" var typename = ";
+            string s2 = @"    ;
+            var a=typename.GetType();
+            string conma="","";
+       var d = a.GetMembers();
+       string b = ""{\n"";
+       foreach (var c in d) {
+           if (c.MemberType.ToString() == ""Property""){
+               b +="" \""""+c.Name+""\"":""+"" \""""+ a.GetProperty(c.Name).GetValue(typename)+""[""+c.ToString()+""]""+"" \"""" ;  
+               }else if (c.MemberType.ToString() == ""Method"") {  
+                  string temp="""";
+                  try{temp= a.GetMethod(c.Name).Invoke(typename,new object[]{}).ToString();}
+                    catch(Exception e){
+                        
+                    }
+                   b +="" \""""+c.Name+""\"":""+"" \""""+  temp+""[""+c.ToString()+""]""+"" \"""" ;  }
+                    else {  b += c.ToString() ;}
+                    b+=conma;
+                    ";
+                
+            string s3 = @"b+=""\n"";}b=""Class:""+a.ToString()+""\n""+b;b+=""}"";b";
+            string coderesult = s + args[1] + s2 + s3;
+            Console.WriteLine(coderesult);
+            await EvalCommand(
+                message
+            , "func", coderesult);
+
+            
+
         }
         else if (args[0] == "run")
         {
@@ -113,21 +145,21 @@ class Program
             {
                 result = CommandEmbedBuilder(
                     "エラー",
-                    "Scriptを入力してください",message
+                    "Scriptを入力してください", message
                 ).Result;
             }
             else if (a.IndexOf("error CS") != -1)
             {
                 result = CommandEmbedBuilder(
                     "コンパイルエラー",
-                    a,message
+                    a, message
                 ).Result;
             }
             else
             {
                 result = CommandEmbedBuilder(
                     "成功しました",
-                    a,message
+                    a, message
                 ).Result;
             }
             await messageme.ModifyAsync((mes) =>
@@ -141,8 +173,13 @@ class Program
     {
 
     }
-    private async Task EvalCommand(SocketMessage Message, string command)
+    private async Task EvalCommand(SocketMessage Message, string command, string rewrite = null)
     {
+        var content = Message.Content;
+        if (rewrite != null)
+        {
+            content = rewrite;
+        }
         var message = await Message.Channel.SendMessageAsync(
               "", embed: CommandEmbedBuilder("コードのコンパイル中..", "").Result
           );
@@ -151,7 +188,11 @@ class Program
         {
             a = eval(Message.Content.Substring(prefix.Length + 4), Message).Result;
         }
-        else if (command == "run"||Message.Content.Substring(prefix.Length,prefix.Length+1)=="run")
+        else if (command == "func")
+        {
+            a = RunCSharpAsync(content, Message).Result;
+        }
+        else if (command == "run" || Message.Content.Substring(prefix.Length, prefix.Length + 1) == "run")
         {
             a = RunCSharpAsync(Message.Content.Substring(prefix.Length + 3), Message).Result;
         }
@@ -159,8 +200,8 @@ class Program
         {
             a = "error";
         }
-        
-        Embed result = CommandEmbedBuilder("a", "a",Message).Result;
+
+        Embed result = CommandEmbedBuilder("a", "a", Message).Result;
         if (a == "error:null")
         {
             result = CommandEmbedBuilder(
@@ -172,7 +213,7 @@ class Program
         {
             result = CommandEmbedBuilder(
                 "コンパイルエラー",
-                a,Message
+                a, Message
             ).Result;
         }
         else
@@ -188,22 +229,24 @@ class Program
             mes.Embed = result;
         });
     }
-    private async Task<Embed> CommandEmbedBuilder(string title, string content,SocketMessage mes=null)
+    private async Task<Embed> CommandEmbedBuilder(string title, string content, SocketMessage mes = null)
     {
         var e = new EmbedBuilder();
         e.Title = title;
-        if(content.Length>4010){
-e.Description = $"```字数制限のためファイルでアップロード```";
-         var s= new StreamWriter("message.text");
-          s.Write(content);
-          s.Close();
-await mes.Channel.SendFileAsync("message.text");
-          var ss= new StreamWriter("message.text");
-          ss.Write("");
-          ss.Close();
+        if (content.Length > 4010)
+        {
+            e.Description = $"```字数制限のためファイルでアップロード```";
+            var s = new StreamWriter("message.json");
+            s.Write(content);
+            s.Close();
+            await mes.Channel.SendFileAsync("message.json");
+            var ss = new StreamWriter("message.json");
+            ss.Write("");
+            ss.Close();
         }
-        else{
-e.Description =$"```\n{content}\n```";
+        else
+        {
+            e.Description = $"```\n{content}\n```";
         }
         return e.Build();
     }
@@ -226,7 +269,7 @@ e.Description =$"```\n{content}\n```";
     {
         try
         {
-           object global;
+            object global;
             var options = ScriptOptions.Default
                  .WithImports(DefaultImports)
                  .WithReferences(DefaultReferences)
@@ -239,30 +282,31 @@ e.Description =$"```\n{content}\n```";
 
             if (message.Content == $"{prefix}run")
             {
-                IMessage replymes= message.Channel.GetMessageAsync(((ulong)message.Reference.MessageId)).Result;
-                Console.WriteLine(message.Reference.MessageId); 
+                IMessage replymes = message.Channel.GetMessageAsync(((ulong)message.Reference.MessageId)).Result;
+                Console.WriteLine(message.Reference.MessageId);
                 Console.WriteLine(replymes.Content);
                 global = new DiscordNetValuesImessage
                 {
                     client = _client,
                     message = replymes,
                 };
-            var script = CSharpScript.Create(replymes.Content, options, typeof(DiscordNetValuesImessage));
-            var a = await script.RunAsync(global);
-             return a.ReturnValue.ToString() ?? "null";
+                var script = CSharpScript.Create(replymes.Content, options, typeof(DiscordNetValuesImessage));
+                var a = await script.RunAsync(global);
+                return a.ReturnValue.ToString() ?? "null";
             }
-            else{
-            global = new DiscordNetValues
+            else
             {
-                client = _client,
-                message = message,
-            };
-            var script = CSharpScript.Create(code, options, typeof(DiscordNetValues));
-            var a = await script.RunAsync(global);
-             return a.ReturnValue.ToString() ?? "null";
+                global = new DiscordNetValues
+                {
+                    client = _client,
+                    message = message,
+                };
+                var script = CSharpScript.Create(code, options, typeof(DiscordNetValues));
+                var a = await script.RunAsync(global);
+                return a.ReturnValue.ToString() ?? "null";
             }
 
-            
+
         }
         catch (Exception e)
         {
@@ -334,7 +378,7 @@ public class SimpleWebServer
             Console.WriteLine("request incoming...");
 
             NetworkStream stream = client.GetStream();
-            string request = ToString(stream);
+            string request = ToStrings(stream);
 
             Console.WriteLine("");
             Console.WriteLine(request);
@@ -356,7 +400,7 @@ public class SimpleWebServer
             client.Close();
         }
     }
-    public static string ToString(NetworkStream stream)
+    public static string ToStrings(NetworkStream stream)
     {
         MemoryStream memoryStream = new MemoryStream();
         byte[] data = new byte[256];
