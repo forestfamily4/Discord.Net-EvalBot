@@ -49,7 +49,7 @@ class Program
 
     public async Task MainAsync()
     {
-        //token = Environment.GetEnvironmentVariable("token");
+       // token = Environment.GetEnvironmentVariable("token");
         Task task = Task.Run(() =>
         {
             SimpleWebServer.MMain();
@@ -91,7 +91,7 @@ class Program
         {
             var embeds = new EmbedBuilder();
             embeds.WithTitle("help c#のevalbot");
-            embeds.WithDescription($"{prefix}eval [内容]で普通に実行\n{prefix}run [内容]でコンパイル＆実行\n{prefix}runで返信することで実行することもできます。");
+            embeds.WithDescription($"{prefix}eval [内容]で普通に実行\n{prefix}run [内容]でコンパイル＆実行\n{prefix}func [内容]でプロパティ、メソッド一覧を出します");
             await message.Channel.SendMessageAsync("", embed: embeds.Build());
         }
 
